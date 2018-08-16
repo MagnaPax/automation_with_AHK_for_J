@@ -549,19 +549,29 @@ BasicProcessing(SO#BeingUsedNow, EndSO#, CustomerPO, IsItFromNewOrder, IsItFromE
 			
 			; ################ 이번 주문 처리 않고 다음 주문으로 넘기기 ################			
 			
-			; 마지막 배송일 읽어서 최근 주문이면 다음 주문으로 자동으로 넘어가기
-			; 뉴오더가 아닐때 실행. 뉴오더는 정보를 업데이트해야되는 경우가 많기 때문에
+			; 마지막 배송일 읽은뒤 만약 최근에 내보냈다면
+			; 뉴오더일때는 경고창 띄우고 백오더일때는 그냥 제끼기						
+			Sleep 1500			
+			isItSupposedToBeSkipped := isItRecentShippedOutOrder() ; 마지막 배송일 읽기
+			
+			; 뉴오더가 아닐때는 최근 주문이면 그냥 제끼기
 			if(!IsItFromNewOrder){
 				
-				Sleep 1500
-				isItSupposedToBeSkipped := isItRecentShippedOutOrder()
-				
-				; 변수 값이 0일때는 제끼기
+				; isItSupposedToBeSkipped 변수 값이 0일때는 마지막 배송일이 최근이라는 뜻이니 제끼기
 				if(!isItSupposedToBeSkipped){
 ;					MsgBox, 262144, Title, 이 오더는 배송된지 얼마 안 됐으니 제끼기
 					return
 				}
 			}
+			; 뉴오더일때는 마지막 배송날짜가 최근이면 경고창 띄우기
+			else if(IsItFromNewOrder){
+				
+				; isItSupposedToBeSkipped 변수 값이 0일때는 마지막 배송일이 최근이라는 뜻이니 경고창 띄우기
+				if(!isItSupposedToBeSkipped){
+					MsgBox, 262144, RECENT SHIP OUT ORDER, 이 오더는 배송된지 얼마 안 된 주문.
+				}			
+			}
+			
 
 			
 			; TIFFANY ONLY 주문이면 그냥 다음 주문으로 자동으로 넘어가기
@@ -577,6 +587,27 @@ BasicProcessing(SO#BeingUsedNow, EndSO#, CustomerPO, IsItFromNewOrder, IsItFromE
 				}
 			}
 			
+
+
+			; 펜딩 오더가 있는지 확인키 위한 변수.
+			isTherePendingOrder = 0
+			
+			; 펜딩 오더가 있는지 확인하기
+			; 펜딩 오더 있으면 isTherePendingOrder 값은 0
+			; 펜딩 오더 없으면 isTherePendingOrder 값은 1
+			isTherePendingOrder := N_driver.checkPickTicketSectionToFindIfPendingOrderExists()
+			
+			
+			; 뉴오더가 아닐때는 펜딩된 픽티켓이 있다면 그냥 제끼기
+			if(!IsItFromNewOrder){
+				
+				; 펜딩된 Pick Ticket 이 있다면 이번 주문 제끼기
+				if(!isTherePendingOrder){
+					return
+				}				
+			}
+
+			
 			
 			; po box 주소인지 확인			
 			addrs := N_driver.getADDr()
@@ -589,27 +620,15 @@ BasicProcessing(SO#BeingUsedNow, EndSO#, CustomerPO, IsItFromNewOrder, IsItFromE
 			}
 			
 			
-			
-			;~ ; 마지막 배송일 읽어서 최근 주문이면 다음 주문으로 자동으로 넘어가기
-			;~ ; 뉴오더가 아닐때 실행. 뉴오더는 정보를 업데이트해야되는 경우가 많기 때문에
-			;~ if(!IsItFromNewOrder){
-				
-				;~ isItSupposedToBeSkipped := isItRecentShippedOutOrder()
-				
-				;~ ; 변수 값이 0일때는 제끼기
-				;~ if(!isItSupposedToBeSkipped){
-;~ ;					MsgBox, 262144, Title, 이 오더는 배송된지 얼마 안 됐으니 제끼기
-					;~ return
-				;~ }
-			;~ }
-			
-
 			; Open SO 에 아이템이 있는지 확인하기
 			; 수동으로 처리하더라도 추가할 아이템이 있는지 확인하기 filter를 사용해서 쉽게 나타내주면 좋으니까
 			; isThereItemsOnOpenSo 변수는 global 로 선언되어서 아무곳에서나 사용 가능함
 			isThereItemsOnOpenSo = 0
 			;~ isThereItemsOnOpenSo := N_driver.checkOpenSoIfThereAreItemsShipOut()
 			
+			
+			
+
 			
 			; ################ Allocation 주문 중에서 자동으로 뽑기 ################
 
@@ -633,7 +652,7 @@ if(orderType != "06DAL2018"){ ; Order Type 이 6월의 달라스 쇼가 아닌�
 				
 				
 				; 펜딩 오더가 있는지 확인키 위한 변수.
-				isTherePendingOrder = 0
+				;~ isTherePendingOrder = 0
 				
 				
 				; priority 번호가 2인 경우만
@@ -645,7 +664,7 @@ if(orderType != "06DAL2018"){ ; Order Type 이 6월의 달라스 쇼가 아닌�
 					; 펜딩 오더가 있는지 확인하기
 					; 펜딩 오더 있으면 isTherePendingOrder 값은 0
 					; 펜딩 오더 없으면 isTherePendingOrder 값은 1
-					isTherePendingOrder := N_driver.checkPickTicketSectionToFindIfPendingOrderExists()		
+					;~ isTherePendingOrder := N_driver.checkPickTicketSectionToFindIfPendingOrderExists()		
 						
 					
 					; 펜딩된 Pick Ticket 이 없을때만 (isTherePendingOrder 변수에 값이 있을때만)
@@ -717,25 +736,34 @@ if(orderType == "06ATL18"){
 
 
 
-			; 뉴오더일때
-			; 펜딩 오더가 있는지 확인 후 있으면 경고창 띄우기
-			if(IsItFromNewOrder){
+			;~ ; 뉴오더일때
+			;~ ; 펜딩 오더가 있는지 확인 후 있으면 경고창 띄우기
+			;~ if(IsItFromNewOrder){
 			
-				; 펜딩 오더가 있는지 확인키 위한 변수.
-				isTherePendingOrder = 0
+				;~ ; 펜딩 오더가 있는지 확인키 위한 변수.
+				;~ isTherePendingOrder = 0
 				
-				; 펜딩 오더가 있는지 확인하기
-				; 펜딩 오더 있으면 isTherePendingOrder 값은 0
-				; 펜딩 오더 없으면 isTherePendingOrder 값은 1				
-				isTherePendingOrder := N_driver.checkPickTicketSectionToFindIfPendingOrderExists()
+				;~ ; 펜딩 오더가 있는지 확인하기
+				;~ ; 펜딩 오더 있으면 isTherePendingOrder 값은 0
+				;~ ; 펜딩 오더 없으면 isTherePendingOrder 값은 1				
+				;~ isTherePendingOrder := N_driver.checkPickTicketSectionToFindIfPendingOrderExists()
 				
-				; 펜딩 오더가 있으면 경고창 띄우기
-				if(!isTherePendingOrder){
+				;~ ; 펜딩 오더가 있으면 경고창 띄우기
+				;~ if(!isTherePendingOrder){
+					;~ MsgBox, 262144, WARNNING, !!!! WARNNING !!!!`n`nCHECK PENDING ORDERS
+				;~ }
+			;~ }
+
+			; 뉴오더일때는 펜딩된 픽티켓이 있다면 경고창 띄우기
+			; 펜딩 오더가 있는지 없는지 확인하는 checkPickTicketSectionToFindIfPendingOrderExists 함수는 위에서 호출해서 이미 isTherePendingOrder 변수에 결과값 저장했다
+			if(IsItFromNewOrder){
+				
+				; 펜딩된 Pick Ticket 이 있다면 경고창 띄우기
+				if(!isTherePendingOrder){					
 					MsgBox, 262144, WARNNING, !!!! WARNNING !!!!`n`nCHECK PENDING ORDERS
-				}
+				}								
 			}
-
-
+			
 			
 			; 필요 없는 문자가 들어있을 경우를 대비해 CustomerPO 값 정리해주기
 			CustomerPO := Trim(CustomerPO)

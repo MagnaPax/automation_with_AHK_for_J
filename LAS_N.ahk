@@ -59,18 +59,24 @@ MsgBox, % "PO # " . CustomerPO . " 이거 열렀나?"
 			URL = https://vendoradmin.fashiongo.net/#/order/orders ; 전체 오더 검색창 주소
 			driver := goToURl_AfterLogIn_IfNeeded(driver, URL) ; 원하는 url로 이동
 
-MsgBox, 전체 오더 검색창 화면으로 이동했음
+;~ MsgBox, 전체 오더 검색창 화면으로 이동했음
 
 			; 전체 오더 검색창 주소로 이동한 뒤
 			; 검색조건을 PO 번호로 바꾼 뒤 PO 번호로 찾기
 			driver := findOrdersByPO#(driver, CustomerPO)
 			
-MsgBox, 검색 조건을 바꿨음
+;~ MsgBox, 검색 조건을 바꿨음
 
 			; 가장 위에 있는 PO 번호를 새탭으로 열기
 			driver := openNewTab_clickMostTopPO#(driver, CustomerPO)
 			
-MsgBox, 새탭에서 열렸음			
+;~ MsgBox, 새탭에서 열렸음
+
+			; 현재 페이지의 Order Status 가 New Orders 이거나 Back Ordered 일때 Confirmed Orders 로 바꾸기
+			driver := changeNewOrders_To_ConfirmedOrders(driver)
+			
+;~ MsgBox, Order Status 가 바뀌었음
+
 			
 			Arr_FGInfo := getInfoOnFG_And_Return_That(driver, CustomerPO, IsItFromNewOrder, IsItFromExcelFile)
 
@@ -97,10 +103,22 @@ MsgBox, pause 1
 			BuyerNotes := RegExReplace(BuyerNotes, "[^a-zA-Z0-9 ]", "")
 			AdditionalInfo := RegExReplace(AdditionalInfo, "[^a-zA-Z0-9 ]", "")
 			StaffNotes := RegExReplace(StaffNotes, "[^a-zA-Z0-9 ]", "")
-						
+	
+	
+	MsgBox, % Arr_BillingAdd
+
+/* 배열로부터 읽기 두 번째 방법
+;~ Array:=[1,3,"ㅋㅋ"]
+for index, element in Arr_BillingAdd
+{
+	MsgBox % "Element number " . index . " is " . element
+}
+*/
+
+
 			
 			; UPS Ground 값은 3이다. 3이 아니면 
-	;		MsgBox, % ShippingMethodStatus
+MsgBox, % "ShippingMethodStatus : " . ShippingMethodStatus
 			if(ShippingMethodStatus != 3)
 			{
 				SoundPlay, %A_WinDir%\Media\Ring02.wav
