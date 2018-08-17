@@ -32,6 +32,7 @@ ComObjError(false)
 
 
 global #ofCC_counter ; 램스에서 읽은 카드 갯수 저장하는 변수a
+global URL
 global IsItFromNewOrder, IsItFromExcelFile, IsItFromAllocation, isThereItemsOnOpenSo, driver
 
 ;~ SO#BeingUsedNow, EndSO#, CustomerPO, IsItFromNewOrder, IsItFromExcelFile, SO#FromJODIFLcom, CustMemoFromJODIFLcom, IsItFromAllocation
@@ -2048,128 +2049,202 @@ return
 
 	WinMinimize, N41 Processing
 	
-
-	driver := ChromeGet()
-
-	; 현재 페이지의 HTML 소스 코드 읽기
-	Xpath = //*
-	HTML_Source := driver.FindElementByXPath(Xpath).Attribute("outerHTML")
-	
-	Sleep 700
-	
-	;~ MsgBox, % HTML_Source
-
-	; 백오더 된 아이템은 체크박스가 활성화 되지 않는다
-	; 현재 화면에 활성화 된 체크박스가 몇 개 있는지 알아보기 위해
-	; 현재 화면에 있는 모든 활성화 된 체크박스 Str_#ofCheckBoxes 배열에 저장
-	UnquotedOutputVar = imU)<div\s_ngcontent-c7=""\sclass="check-square"><div
-	UnquotedOutputVar = class="check-square"><div
-
-	FoundPos = 1
-	Str_#ofCheckBoxes := object()
-	while(FoundPos := RegExMatch(HTML_Source, UnquotedOutputVar, SubPat, FoundPos + strLen(SubPat)))
-	{
-;		MsgBox, % SubPat1
-		Str_#ofCheckBoxes.Insert(SubPat1)
-	}
-
-
-	; 소스코드에서 읽을 때는 아이템에 있는 체크박스 갯수보다 2개가 더 많다. 아마도 Total 옆에 있는 체크박스 갯수포함 다른 것까지 세는 것 같다. 그래서 Str_#ofCheckBoxes 배열 갯수에서 2개를 빼준다
-	#ofCheckBoxes := Str_#ofCheckBoxes.Maxindex() - 2
-
-	; Xpath 들
-	TheBlankOfShippingFee_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[4]/div[2]/div[2]/div/div/div[3]/div/div[6]/div[2]/div/input
-	SaveButton_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[5]/div/button
-	AuthorizeButton_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[2]/div[2]/div[2]/div[1]/ul/li[2]/span[2]/div/div[1]/div/button[1]
-	AuthorizeButton_Xpath = //*[contains(text(), 'Authorize')]
-	OkButtonInAuthorizeWindow_Xpath = //*[@id='okButton']
-	
-	
-	; 수량에 맞는 금액 입력하기
-;	SoundPlay, %A_WinDir%\Media\Ring06.wav
-	if #ofCheckBoxes between 1 and 4
-	{
-		driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("30")
-;		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`nPUT IN $30
-	}
-	else if #ofCheckBoxes between 5 and 10
-	{
-		driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("50")
-;		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`nPUT IN $50
-	}
-	else if #ofCheckBoxes between 11 and 100
-	{
-		driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("70")
-;		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`nPUT IN $70
-	}
-	else{
-		driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("30")
-		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`n`n`n`nNO VALUE IN #ofCheckBoxes BUT PUT IN $30 AS DEFAULT
-	}
-	
-	; Save 버튼 클릭 후 Authorize 버튼 클릭하기
-	Sleep 300
-	driver.FindElementByXPath(SaveButton_Xpath).click()
-	Sleep 500
-	
-	; Authorize 버튼 생길때까지 기다린 뒤 클릭한 뒤 확인창이 나오면 OK 버튼 클릭하기
-	Loop{
-		Sleep 100
-		if(driver.FindElementByXPath(AuthorizeButton_Xpath).isDisplayed()){
-			Sleep 100
-;			MsgBox, DISPLAYED
-			driver.FindElementByXPath(AuthorizeButton_Xpath).click()
-			Sleep 150
+	; 만약 현재 페이지가 FG 페이지라면
+	if(RegExMatch(driver.Url, "imU)fashiongo")){
 			
-			; 확인창 나오면 ok 버튼 클릭
-			if(driver.FindElementByXPath(OkButtonInAuthorizeWindow_Xpath).isDisplayed()){
+		;~ driver := ChromeGet()
+
+		; 현재 페이지의 HTML 소스 코드 읽기
+		Xpath = //*
+		HTML_Source := driver.FindElementByXPath(Xpath).Attribute("outerHTML")
+		
+		Sleep 700
+		
+		;~ MsgBox, % HTML_Source
+
+		; 백오더 된 아이템은 체크박스가 활성화 되지 않는다
+		; 현재 화면에 활성화 된 체크박스가 몇 개 있는지 알아보기 위해
+		; 현재 화면에 있는 모든 활성화 된 체크박스 Str_#ofCheckBoxes 배열에 저장
+		UnquotedOutputVar = imU)<div\s_ngcontent-c7=""\sclass="check-square"><div
+		UnquotedOutputVar = class="check-square"><div
+
+		FoundPos = 1
+		Str_#ofCheckBoxes := object()
+		while(FoundPos := RegExMatch(HTML_Source, UnquotedOutputVar, SubPat, FoundPos + strLen(SubPat)))
+		{
+	;		MsgBox, % SubPat1
+			Str_#ofCheckBoxes.Insert(SubPat1)
+		}
+
+
+		; 소스코드에서 읽을 때는 아이템에 있는 체크박스 갯수보다 2개가 더 많다. 아마도 Total 옆에 있는 체크박스 갯수포함 다른 것까지 세는 것 같다. 그래서 Str_#ofCheckBoxes 배열 갯수에서 2개를 빼준다
+		#ofCheckBoxes := Str_#ofCheckBoxes.Maxindex() - 2
+
+		; Xpath 들
+		TheBlankOfShippingFee_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[4]/div[2]/div[2]/div/div/div[3]/div/div[6]/div[2]/div/input
+		SaveButton_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[5]/div/button
+		AuthorizeButton_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[2]/div[2]/div[2]/div[1]/ul/li[2]/span[2]/div/div[1]/div/button[1]
+		AuthorizeButton_Xpath = //*[contains(text(), 'Authorize')]
+		OkButtonInAuthorizeWindow_Xpath = //*[@id='okButton']
+		
+		
+		; 수량에 맞는 금액 입력하기
+	;	SoundPlay, %A_WinDir%\Media\Ring06.wav
+		if #ofCheckBoxes between 1 and 4
+		{
+			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("30")
+	;		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`nPUT IN $30
+		}
+		else if #ofCheckBoxes between 5 and 10
+		{
+			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("50")
+	;		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`nPUT IN $50
+		}
+		else if #ofCheckBoxes between 11 and 100
+		{
+			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("70")
+	;		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`nPUT IN $70
+		}
+		else{
+			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("30")
+			MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`n`n`n`nNO VALUE IN #ofCheckBoxes BUT PUT IN $30 AS DEFAULT
+		}
+		
+		; Save 버튼 클릭 후 Authorize 버튼 클릭하기
+		Sleep 300
+		driver.FindElementByXPath(SaveButton_Xpath).click()
+		Sleep 500
+		
+		; Authorize 버튼 생길때까지 기다린 뒤 클릭한 뒤 확인창이 나오면 OK 버튼 클릭하기
+		Loop{
+			Sleep 100
+			if(driver.FindElementByXPath(AuthorizeButton_Xpath).isDisplayed()){
 				Sleep 100
-				driver.FindElementByXPath(OkButtonInAuthorizeWindow_Xpath).click()
+	;			MsgBox, DISPLAYED
+				driver.FindElementByXPath(AuthorizeButton_Xpath).click()
+				Sleep 150
+				
+				; 확인창 나오면 ok 버튼 클릭
+				if(driver.FindElementByXPath(OkButtonInAuthorizeWindow_Xpath).isDisplayed()){
+					Sleep 100
+					driver.FindElementByXPath(OkButtonInAuthorizeWindow_Xpath).click()
+					break
+				}
+				
 				break
 			}
-			
-			break
 		}
-	}
+		
+		driver.executeScript("return document.readyState").toString().equals("complete") ; 페이지가 로딩이 끝날때까지 기다립니다
+		Sleep 3000
+		
+		; 제대로 결제됐는지 확인
+		; 결제 결과 값 나올때까지 계속 루프 돌다가 제대로 결제됐으면 루프 빠져나오고 decline 됐으면 에러 메세지 띄우고 루프 빠져나오기
+		PaymentStatus_Cpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[2]/div[2]/div[2]/div[1]/ul/li[1]/span[2]/div/span[1]
+		
+		Loop{
+			if(driver.FindElementByXPath(PaymentStatus_Cpath).Attribute("innerText") == "Authorized")
+				break
+			else if driver.FindElementByXPath(PaymentStatus_Cpath).Attribute("innerText") contains Pending
+			{
+				SoundPlay, %A_WinDir%\Media\Ring02.wav
+				MsgBox, 262144, Title, IT'S A PENDING ORDER`nCLICK OK TO CONTINUE
+				break
+			}
+		}	
+		
+		;~ MsgBox, % driver.FindElementByXPath(PaymentStatus_Cpath).Attribute("outerHTML")
+		
+		
+		; 금액 확인하기 쉽기 위해 배송료 입력칸 클릭해서 화면 아래로 내리기
+		driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).click()
+		
+		;~ IfWinExist, OPTIONS
+			;~ WinActivate, OPTIONS
+
+		WinActivate, OPTIONS
+		WinActivate, Memo
+		WinActivate, UPS STATUS
+		WinActivate, NOT APPROVED
+
+		SoundPlay, %A_WinDir%\Media\Ring06.wav
+		
+		return
+		
+	} ; if ends - 만약 현재 페이지가 FG 페이지라면
 	
-	driver.executeScript("return document.readyState").toString().equals("complete") ; 페이지가 로딩이 끝날때까지 기다립니다
-	Sleep 3000
-	
-	; 제대로 결제됐는지 확인
-	; 결제 결과 값 나올때까지 계속 루프 돌다가 제대로 결제됐으면 루프 빠져나오고 decline 됐으면 에러 메세지 띄우고 루프 빠져나오기
-	PaymentStatus_Cpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[2]/div[2]/div[2]/div[1]/ul/li[1]/span[2]/div/span[1]
-	
-	Loop{
-		if(driver.FindElementByXPath(PaymentStatus_Cpath).Attribute("innerText") == "Authorized")
-			break
-		else if driver.FindElementByXPath(PaymentStatus_Cpath).Attribute("innerText") contains Pending
+	; 만약 현재 페이지가 LAS 페이지라면
+	else if(RegExMatch(driver.Url, "imU)lashowroom")){
+		
+		Xpath = //*[@id="orderedit_form"]/div[1]/div[9]/table/tbody/tr[3]/td/table/tbody/tr[1]/td[2]
+		#ofItems := driver.FindElementByXPath(Xpath).Attribute("innerText")
+		
+;MsgBox, % "#ofItems : " . #ofItems
+		
+		
+		; Xpath 들
+		TheBlankOfShippingFee_Xpath = //*[@id="ship_charge"] ; 배송비 입력칸
+		updateGrandTotal_Xpath = //*[@id="update_grandtotal"] ; 배송비 입력 후 업데이트 버튼
+		preAuthorize_Xpath = //*[@id="authorize_payment"] ; PRE AUTHORIZE 버튼
+		pre_AuthorizePayment_Xpath = //button[@value='Authorize Payment Now'] ; Pre-Authorize Payment 버튼. Xpath 가 계속 바뀌어서 이렇게 value 값으로 찾았다
+		
+		
+		; 수량에 맞는 금액 입력하기
+		;~ if #ofItems between 1 and 4
+		if #ofItems between 1 and 24
 		{
-			SoundPlay, %A_WinDir%\Media\Ring02.wav
-			MsgBox, 262144, Title, IT'S A PENDING ORDER`nCLICK OK TO CONTINUE
-			break
+			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("30")
+	;		MsgBox, 262144, Title, #ofItems : %#ofItems%`nPUT IN $30
 		}
-	}	
+		;~ else if #ofItems between 5 and 10
+		else if #ofItems between 25 and 60
+		{
+			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("50")
+	;		MsgBox, 262144, Title, #ofItems : %#ofItems%`nPUT IN $50
+		}
+		;~ else if #ofItems between 11 and 100
+		else if #ofItems between 61 and 10000
+		{
+			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("70")
+	;		MsgBox, 262144, Title, #ofItems : %#ofItems%`nPUT IN $70
+		}
+		else{
+			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("30")
+			MsgBox, 262144, Title, #ofItems : %#ofItems%`n`n`n`nNO VALUE IN #ofItems BUT PUT IN $30 AS DEFAULT
+		}
+		
+		
+		; 배송비 입력 후 업데이트 버튼 클릭
+		driver.FindElementByXPath(updateGrandTotal_Xpath).click()
+		
+		; PRE AUTHORIZE 버튼 클릭
+		driver.FindElementByXPath(preAuthorize_Xpath).click()
+		
+		Sleep 3000
+		
+		; Pre-Authorize Payment 버튼 클릭
+		driver.FindElementByXPath(pre_AuthorizePayment_Xpath).click()
+		
+		
+MsgBox, 잘 처리됐남?
 	
-	;~ MsgBox, % driver.FindElementByXPath(PaymentStatus_Cpath).Attribute("outerHTML")
-	
-	
-	; 금액 확인하기 쉽기 위해 배송료 입력칸 클릭해서 화면 아래로 내리기
-	driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).click()
-	
-	;~ IfWinExist, OPTIONS
-		;~ WinActivate, OPTIONS
-
-	WinActivate, OPTIONS
-	WinActivate, Memo
-	WinActivate, UPS STATUS
-	WinActivate, NOT APPROVED
-
-	SoundPlay, %A_WinDir%\Media\Ring06.wav
+		
+		return
+	}
 	
 	return
 	
 	
+		
 
+
+
+
+^!l::
+
+	driver.Get("http://duckduckgo.com/")
+	MsgBox
+	return
 
 
 
