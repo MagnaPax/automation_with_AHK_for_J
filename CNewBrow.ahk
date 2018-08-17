@@ -2,7 +2,7 @@
 
 
 
-global URL
+;~ global URL
 
 
 ; ############################################################################################################################################################################################################################################################################
@@ -695,6 +695,8 @@ getInfoOnFG_And_Return_That(driver, CustomerPO, IsItFromNewOrder, IsItFromExcelF
 
 	Arr_CC := object()
 	Arr_Memo := object()
+	Arr_BillingADD := object()
+	Arr_ShippingADD := object()
 	
 	
 	; Shipping Method 상태 알아내기
@@ -733,8 +735,7 @@ getInfoOnFG_And_Return_That(driver, CustomerPO, IsItFromNewOrder, IsItFromExcelF
 	StringUpper, Data, Data
 	Arr_Memo[3] := Data
 	
-	
-	
+
 	
 
 		
@@ -754,21 +755,19 @@ getInfoOnFG_And_Return_That(driver, CustomerPO, IsItFromNewOrder, IsItFromExcelF
 	UnquotedOutputVar = im)(( unit| Suite| Ste| #| Apt| SPACE| BLDG| Building| Sujite| Sujite).*)
 	;~ UnquotedOutputVar = im)((unit|Suite|Ste|#|Apt|SPACE|BLDG|Building|Sujite|Sujite).*)
 	;~ UnquotedOutputVar = im)((\sunit|\sSuite|\sSte|\s#|\sApt|\sSPACE|\sBLDG|\sBuilding|\sSujite|\sSujite).*)
-	Arr_BillingADD[5] := M_driver.FindAdd2_In_Add1(Arr_BillingADD[1], UnquotedOutputVar) ; Arr_BillingADD[1] 에 들어있는 전체 주소를 넘겨서 ADD2 만 Arr_BillingADD[5] 에 넣기
-	Arr_BillingADD[1] := M_driver.DeleteAdd2_In_Add1(Arr_BillingADD[1], UnquotedOutputVar) ; 전체 주소 중 ADD2를 지운뒤 Arr_BillingADD[1]에 넣기
+	Arr_BillingADD[5] := FindAdd2_In_Add1(Arr_BillingADD[1], UnquotedOutputVar) ; Arr_BillingADD[1] 에 들어있는 전체 주소를 넘겨서 ADD2 만 Arr_BillingADD[5] 에 넣기
+	Arr_BillingADD[1] := DeleteAdd2_In_Add1(Arr_BillingADD[1], UnquotedOutputVar) ; 전체 주소 중 ADD2를 지운뒤 Arr_BillingADD[1]에 넣기
 		
-;	MsgBox, % "add1 : " Arr_BillingADD[1] . "`n" . "add2 : " . Arr_BillingADD[5]
+;MsgBox, % "add1 : " Arr_BillingADD[1] . "`n" . "add2 : " . Arr_BillingADD[5]
 
 
 	; ZIP 찾아서 배열 6번째에 넣고 3번째에는 State(州)만 넣기
 	UnquotedOutputVar = im)(\d.*)
-	Arr_BillingADD[6] := M_driver.FindAdd2_In_Add1(Arr_BillingADD[3], UnquotedOutputVar) ; Arr_BillingADD[3] 에 있는 State(州) + Zip 을 Zip만 Arr_BillingADD[6] 에 넣기
-	Arr_BillingADD[3] := M_driver.DeleteAdd2_In_Add1(Arr_BillingADD[3], UnquotedOutputVar) ; Arr_BillingADD[3] 값에서 Zip 지운 뒤 State(州) 만 Arr_BillingADD[3] 에 넣기
+	Arr_BillingADD[6] := FindAdd2_In_Add1(Arr_BillingADD[3], UnquotedOutputVar) ; Arr_BillingADD[3] 에 있는 State(州) + Zip 을 Zip만 Arr_BillingADD[6] 에 넣기
+	Arr_BillingADD[3] := DeleteAdd2_In_Add1(Arr_BillingADD[3], UnquotedOutputVar) ; Arr_BillingADD[3] 값에서 Zip 지운 뒤 State(州) 만 Arr_BillingADD[3] 에 넣기
 		
 		
-;		MsgBox, % "State(州) : " Arr_BillingADD[3] . "`n" . "Zip : " . Arr_BillingADD[6]
-
-
+;MsgBox, % "State(州) : " Arr_BillingADD[3] . "`n" . "Zip : " . Arr_BillingADD[6]
 
 
 
@@ -778,14 +777,14 @@ getInfoOnFG_And_Return_That(driver, CustomerPO, IsItFromNewOrder, IsItFromExcelF
 	UnquotedOutputVar = im)(( unit| Suite| Ste| #| Apt| SPACE| BLDG| Building| Sujite| Sujite).*)
 	;~ UnquotedOutputVar = im)((unit|Suite|Ste|#|Apt|SPACE|BLDG|Building|Sujite|Sujite).*)
 	;~ UnquotedOutputVar = im)((\sunit|\sSuite|\sSte|\s#|\sApt|\sSPACE|\sBLDG|\sBuilding|\sSujite|\sSujite).*)
-	Arr_ShippingADD[5] := M_driver.FindAdd2_In_Add1(Arr_ShippingADD[1], UnquotedOutputVar) ; Arr_ShippingADD[1] 에 들어있는 전체 주소를 넘겨서 ADD2 만 Arr_ShippingADD[5] 에 넣기
-	Arr_ShippingADD[1] := M_driver.DeleteAdd2_In_Add1(Arr_ShippingADD[1], UnquotedOutputVar) ; 전체 주소 중 ADD2를 지운뒤 Arr_BillingADD[1]에 넣기
+	Arr_ShippingADD[5] := FindAdd2_In_Add1(Arr_ShippingADD[1], UnquotedOutputVar) ; Arr_ShippingADD[1] 에 들어있는 전체 주소를 넘겨서 ADD2 만 Arr_ShippingADD[5] 에 넣기
+	Arr_ShippingADD[1] := DeleteAdd2_In_Add1(Arr_ShippingADD[1], UnquotedOutputVar) ; 전체 주소 중 ADD2를 지운뒤 Arr_BillingADD[1]에 넣기
 
 
 	; ZIP 찾아서 배열 6번째에 넣고 3번째에는 State(州)만 넣기
 	UnquotedOutputVar = im)(\d.*)
-	Arr_ShippingADD[6] := M_driver.FindAdd2_In_Add1(Arr_ShippingADD[3], UnquotedOutputVar) ; Arr_ShippingADD[3] 에 있는 State(州) + Zip 을 Zip만 Arr_ShippingADD[6] 에 넣기
-	Arr_ShippingADD[3] := M_driver.DeleteAdd2_In_Add1(Arr_ShippingADD[3], UnquotedOutputVar) ; Arr_ShippingADD[3] 값에서 Zip 지운 뒤 State(州) 만 Arr_ShippingADD[3] 에 넣기
+	Arr_ShippingADD[6] := FindAdd2_In_Add1(Arr_ShippingADD[3], UnquotedOutputVar) ; Arr_ShippingADD[3] 에 있는 State(州) + Zip 을 Zip만 Arr_ShippingADD[6] 에 넣기
+	Arr_ShippingADD[3] := DeleteAdd2_In_Add1(Arr_ShippingADD[3], UnquotedOutputVar) ; Arr_ShippingADD[3] 값에서 Zip 지운 뒤 State(州) 만 Arr_ShippingADD[3] 에 넣기
 		
 		
 	; Phone Number
@@ -870,6 +869,13 @@ getInfoOnFG_And_Return_That(driver, CustomerPO, IsItFromNewOrder, IsItFromExcelF
 	}
 
 
+/* 배열로부터 읽기 두 번째 방법
+;~ Array:=[1,3,"ㅋㅋ"]
+for index, element in Arr_BillingADD
+{
+	MsgBox % "Element number " . index . " is " . element
+}
+*/
 
 		
 
@@ -885,6 +891,49 @@ getInfoOnFG_And_Return_That(driver, CustomerPO, IsItFromNewOrder, IsItFromExcelF
 	return driver
 	
 } ; getInfoOnFG_And_Return_That 메소드 끝
+
+
+
+
+
+	; ########################
+	; Arr_Original 배열을 받아서 UnquotedOutputVar조건에 맞는 문자열 돌려주기
+	; ########################
+	FindAdd2_In_Add1(Arr_Original, UnquotedOutputVar){
+;		MsgBox, % "It's in FindAdd2_In_Add1 method`nArr_Original is : " . Arr_Original
+		;~ while(RegExMatch(Arr_Original, "im)\s((unit|Suite|Ste|#|Apt|SPACE|BLDG|Building|Sujite).*)", FoundAdd2)){
+		while(RegExMatch(Arr_Original, UnquotedOutputVar, FoundAdd2)){
+			if(ErrorLevel = 0){
+				Temp := FoundAdd2
+				Temp := Trim(Temp)
+;				MsgBox, % "Add2 : " . Temp . "|"
+			}
+		break
+		}
+		return Temp
+	}
+
+
+
+	; ########################
+	; 배열 받아서 UnquotedOutputVar 조건에 맞는 문자열 삭제하기
+	; ########################
+	DeleteAdd2_In_Add1(Arr_Original, UnquotedOutputVar){		
+		;~ while(FoundPos := RegExMatch(Arr_Original, "im)((unit|Suite|Ste|#|Apt|SPACE|BLDG|Building|Sujite).*)", FoundAdd2)){
+		while(FoundPos := RegExMatch(Arr_Original, UnquotedOutputVar, FoundAdd2)){
+			if(ErrorLevel = 0){
+				Temp := SubStr(Arr_Original, 1, FoundPos-1)
+				Temp := Trim(Temp)
+;				MsgBox, % Temp . "|"
+
+				return Temp
+			}
+		break
+		}
+		return Arr_Original ; UnquotedOutputVar 조건 맞는 문자열 못 찾으면 그냥 Arr_Original 리턴하기
+	}
+
+
 
 
 
