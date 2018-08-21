@@ -25,7 +25,7 @@ global driver
 
 ;~ /*
 
-driver:= ComObjCreate("Selenium.CHROMEDriver") ;Chrome driver
+;~ driver:= ComObjCreate("Selenium.CHROMEDriver") ;Chrome driver
 
 N_driver := new N41
 
@@ -35,20 +35,25 @@ IsItFromNewOrder = 1
 
 ProcessingFGOrder(CustomerPO, F_driver, N_driver, IsItFromNewOrder, IsItFromExcelFile) ; ##################### 주문 창 열기 #######################
 
-MsgBox, % "PO # " . CustomerPO . " 이거 열렀나?"
+MsgBox, 모든것이 처리됐어야 됨
 */
 
 
 
 
 	; FG 오더 처리
-	ProcessingFGOrder(CustomerPO, F_driver, N_driver, IsItFromNewOrder, IsItFromExcelFile){
-	
+	ProcessingFGOrder(CustomerPO, F_driver, N_driver, IsItFromNewOrder, IsItFromExcelFile){	
+		
+		
+		N_driver := new N41	
 	
 		
 		BuyerNotes := ""
 		AdditionalInfo := ""
 		StaffNotes := ""
+		
+		
+		driver:= ComObjCreate("Selenium.CHROMEDriver") ;Chrome driver
 		
 
 		
@@ -59,28 +64,28 @@ MsgBox, % "PO # " . CustomerPO . " 이거 열렀나?"
 			URL = https://vendoradmin.fashiongo.net/#/order/orders ; 전체 오더 검색창 주소
 			driver := goToURl_AfterLogIn_IfNeeded(driver, URL) ; 원하는 url로 이동
 
-;~ MsgBox, 전체 오더 검색창 화면으로 이동했음
+;MsgBox, 전체 오더 검색창 화면으로 이동했음
 
 			; 전체 오더 검색창 주소로 이동한 뒤
 			; 검색조건을 PO 번호로 바꾼 뒤 PO 번호로 찾기
 			driver := findOrdersByPO#(driver, CustomerPO)
 			
-;~ MsgBox, 검색 조건을 바꿨음
+;MsgBox, 검색 조건을 바꿨음
 
 			; 가장 위에 있는 PO 번호를 새탭으로 열기
 			driver := openNewTab_clickMostTopPO#(driver, CustomerPO)
 			
-;~ MsgBox, 새탭에서 열렸음
+;MsgBox, 새탭에서 열렸음
 
 			; 현재 페이지의 Order Status 가 New Orders 이거나 Back Ordered 일때 Confirmed Orders 로 바꾸기
 			driver := changeNewOrders_To_ConfirmedOrders(driver)
 			
-;~ MsgBox, Order Status 가 바뀌었음
+;MsgBox, Order Status 가 바뀌었음
 
 			
 			Arr_FGInfo := getInfoOnFG_And_Return_That(driver, CustomerPO, IsItFromNewOrder, IsItFromExcelFile)
 
-MsgBox, pause 1 
+;MsgBox, pause 1
 
 			Arr_BillingAdd := Arr_FGInfo[1].Clone()
 			Arr_ShippingAdd := Arr_FGInfo[2].Clone()
@@ -105,20 +110,40 @@ MsgBox, pause 1
 			StaffNotes := RegExReplace(StaffNotes, "[^a-zA-Z0-9 ]", "")
 	
 	
-	MsgBox, % Arr_BillingAdd
+	
 
-/* 배열로부터 읽기 두 번째 방법
-;~ Array:=[1,3,"ㅋㅋ"]
+/*
 for index, element in Arr_BillingAdd
 {
-	MsgBox % "Element number " . index . " is " . element
+	MsgBox % "Arr_BillingAdd " . index . " is " . element
 }
+
+for index, element in Arr_ShippingAdd
+{
+	MsgBox % "Arr_ShippingAdd " . index . " is " . element
+}
+
+for index, element in Arr_CC
+{
+	MsgBox % "Arr_CC 신용카드정보 " . index . " is " . element
+}
+
+for index, element in Arr_Memo
+{
+	MsgBox % "Arr_Memo " . index . " is " . element
+}
+
+MsgBox, % "ShippingMethodStatus : " . ShippingMethodStatus
+
+MsgBox, 배열에 들어있는 값들 확인 완료
 */
 
 
+
+
+
 			
-			; UPS Ground 값은 3이다. 3이 아니면 
-MsgBox, % "ShippingMethodStatus : " . ShippingMethodStatus
+			; UPS Ground 값은 3이다. 3이 아니면
 			if(ShippingMethodStatus != 3)
 			{
 				SoundPlay, %A_WinDir%\Media\Ring02.wav

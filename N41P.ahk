@@ -699,7 +699,8 @@ if(orderType != "06DAL2018"){ ; Order Type 이 6월의 달라스 쇼가 아닌�
 								; CBS 등 돈 받지 말고 프린트 하기
 								N41_ProcessingForPT_driver.Alloc_Print_WITHOUT_PreAuthorized(CustomerPO)
 								
-							}
+							}						
+		
 							
 							; 픽티켓도 뽑았으니 계속 진행하지 않고 여기서 리턴하기
 							return
@@ -878,6 +879,9 @@ if(orderType == "06ATL18"){
 				}
 
 			}
+			
+			
+
 			
 			
 			; Allocation 에서 불려온거면 여기서 그냥 리턴하기
@@ -2051,7 +2055,8 @@ return
 	
 	; 만약 현재 페이지가 FG 페이지라면
 	if(RegExMatch(driver.Url, "imU)fashiongo")){
-			
+
+/*
 		;~ driver := ChromeGet()
 
 		; 현재 페이지의 HTML 소스 코드 읽기
@@ -2079,6 +2084,7 @@ return
 
 		; 소스코드에서 읽을 때는 아이템에 있는 체크박스 갯수보다 2개가 더 많다. 아마도 Total 옆에 있는 체크박스 갯수포함 다른 것까지 세는 것 같다. 그래서 Str_#ofCheckBoxes 배열 갯수에서 2개를 빼준다
 		#ofCheckBoxes := Str_#ofCheckBoxes.Maxindex() - 2
+*/
 
 		; Xpath 들
 		TheBlankOfShippingFee_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[4]/div[2]/div[2]/div/div/div[3]/div/div[6]/div[2]/div/input
@@ -2086,38 +2092,50 @@ return
 		AuthorizeButton_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[2]/div[2]/div[2]/div[1]/ul/li[2]/span[2]/div/div[1]/div/button[1]
 		AuthorizeButton_Xpath = //*[contains(text(), 'Authorize')]
 		OkButtonInAuthorizeWindow_Xpath = //*[@id='okButton']
+		total#OfQty_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[4]/div[2]/div[2]/table/tfoot/tr/td[3] ; 전체 아이템 갯수
+		
+		
+		total#OfQty_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[4]/div[2]/div[2]/table/tfoot/tr/td[3] ; 전체 아이템 갯수
+		total#OfQty := driver.FindElementByXPath(total#OfQty_Xpath).Attribute("innerText")
+		
+
+;MsgBox, 262144, Title, total#OfQty : %total#OfQty%
 		
 		
 		; 수량에 맞는 금액 입력하기
 	;	SoundPlay, %A_WinDir%\Media\Ring06.wav
-		if #ofCheckBoxes between 1 and 4
+		;~ if #ofCheckBoxes between 1 and 4
+		if total#OfQty between 1 and 24
 		{
 			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("30")
 	;		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`nPUT IN $30
 		}
-		else if #ofCheckBoxes between 5 and 10
+		;~ else if #ofCheckBoxes between 5 and 10
+		else if total#OfQty between 25 and 60
 		{
 			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("50")
 	;		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`nPUT IN $50
 		}
-		else if #ofCheckBoxes between 11 and 100
+		;~ else if #ofCheckBoxes between 11 and 100
+		else if total#OfQty between 61 and 10000
 		{
 			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("70")
 	;		MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`nPUT IN $70
 		}
-		else{
+		else
+		{
 			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("30")
 			MsgBox, 262144, Title, #ofCheckBoxes : %#ofCheckBoxes%`n`n`n`nNO VALUE IN #ofCheckBoxes BUT PUT IN $30 AS DEFAULT
 		}
 		
 		; Save 버튼 클릭 후 Authorize 버튼 클릭하기
-		Sleep 300
-		driver.FindElementByXPath(SaveButton_Xpath).click()
 		Sleep 500
+		driver.FindElementByXPath(SaveButton_Xpath).click()
+		Sleep 1000
 		
 		; Authorize 버튼 생길때까지 기다린 뒤 클릭한 뒤 확인창이 나오면 OK 버튼 클릭하기
 		Loop{
-			Sleep 100
+			Sleep 200
 			if(driver.FindElementByXPath(AuthorizeButton_Xpath).isDisplayed()){
 				Sleep 100
 	;			MsgBox, DISPLAYED
@@ -2135,25 +2153,35 @@ return
 			}
 		}
 		
-		driver.executeScript("return document.readyState").toString().equals("complete") ; 페이지가 로딩이 끝날때까지 기다립니다
 		Sleep 3000
 		
 		; 제대로 결제됐는지 확인
-		; 결제 결과 값 나올때까지 계속 루프 돌다가 제대로 결제됐으면 루프 빠져나오고 decline 됐으면 에러 메세지 띄우고 루프 빠져나오기
-		PaymentStatus_Cpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[2]/div[2]/div[2]/div[1]/ul/li[1]/span[2]/div/span[1]
+		; 1초마다 제대로 결제됐는지 확인 후 제대로 결제됐으면 루프 빠져나오기		
+		PaymentStatus_Xpath = /html/body/fg-root/div[1]/fg-secure-layout/div/div[2]/fg-order-detail/div[2]/div[2]/div[2]/div[1]/ul/li[1]/span[2]/div/span[1]
 		
-		Loop{
-			if(driver.FindElementByXPath(PaymentStatus_Cpath).Attribute("innerText") == "Authorized")
-				break
-			else if driver.FindElementByXPath(PaymentStatus_Cpath).Attribute("innerText") contains Pending
-			{
-				SoundPlay, %A_WinDir%\Media\Ring02.wav
-				MsgBox, 262144, Title, IT'S A PENDING ORDER`nCLICK OK TO CONTINUE
+		Loop, 10
+		{
+			
+			Sleep 1000
+			
+			payment_Status := driver.FindElementByXPath(PaymentStatus_Xpath).Attribute("innerText")
+		
+			if(payment_Status == "Authorized"){
 				break
 			}
-		}	
+		}
 		
-		;~ MsgBox, % driver.FindElementByXPath(PaymentStatus_Cpath).Attribute("outerHTML")
+		; 만약 결제가 안됐으면 메세지 띄우기
+		theResult := driver.FindElementByXPath(PaymentStatus_Xpath).Attribute("innerText")
+		if theResult contains Pending
+		{
+			SoundPlay, %A_WinDir%\Media\Ring02.wav
+			MsgBox, 262144, Title, IT'S A PENDING ORDER`nCLICK OK TO CONTINUE
+			;~ break
+		}		
+		
+		
+		;~ MsgBox, % driver.FindElementByXPath(PaymentStatus_Xpath).Attribute("outerHTML")
 		
 		
 		; 금액 확인하기 쉽기 위해 배송료 입력칸 클릭해서 화면 아래로 내리기
@@ -2161,7 +2189,9 @@ return
 		
 		;~ IfWinExist, OPTIONS
 			;~ WinActivate, OPTIONS
-
+			
+			
+		; N41 동작시키기 위한 메세지 창들 활성화 시키기 (마우스로 움직이기 귀찮아서)
 		WinActivate, OPTIONS
 		WinActivate, Memo
 		WinActivate, UPS STATUS
@@ -2187,6 +2217,7 @@ return
 		updateGrandTotal_Xpath = //*[@id="update_grandtotal"] ; 배송비 입력 후 업데이트 버튼
 		preAuthorize_Xpath = //*[@id="authorize_payment"] ; PRE AUTHORIZE 버튼
 		pre_AuthorizePayment_Xpath = //button[@value='Authorize Payment Now'] ; Pre-Authorize Payment 버튼. Xpath 가 계속 바뀌어서 이렇게 value 값으로 찾았다
+		transactionsResult_Xpath = /html/body/div[2]/div[3]/table/tbody/tr[2]/td[6]/span ; 카드 결제 결과
 		
 		
 		; 수량에 맞는 금액 입력하기
@@ -2212,21 +2243,68 @@ return
 			driver.FindElementByXPath(TheBlankOfShippingFee_Xpath).sendKeys(driver.Keys.CONTROL, "a").SendKeys("30")
 			MsgBox, 262144, Title, #ofItems : %#ofItems%`n`n`n`nNO VALUE IN #ofItems BUT PUT IN $30 AS DEFAULT
 		}
+	
+	
+MsgBox, 262144, Title, 배송료 제대로 입력됐나?
+
 		
 		
 		; 배송비 입력 후 업데이트 버튼 클릭
 		driver.FindElementByXPath(updateGrandTotal_Xpath).click()
 		
 		; PRE AUTHORIZE 버튼 클릭
-		driver.FindElementByXPath(preAuthorize_Xpath).click()
+		driver.FindElementByXPath(preAuthorize_Xpath).click()		
 		
 		Sleep 3000
 		
 		; Pre-Authorize Payment 버튼 클릭
 		driver.FindElementByXPath(pre_AuthorizePayment_Xpath).click()
 		
+
+
+		; 제대로 결제됐는지 확인
+		; 1초마다 결제 결과 페이지로 넘어갔는지 확인 후 넘어갔으면 루프 빠져나온다
+		Loop, 10
+		{
+			
+			Sleep 1000
 		
-MsgBox, 잘 처리됐남?
+			if(RegExMatch(driver.Url, "imU)order_transaction_view")){
+				Sleep 500
+				break
+			}
+		}
+		
+		
+;~ MsgBox, % driver.FindElementByXPath(transactionsResult_Xpath).Attribute("value")	
+;~ MsgBox, % driver.FindElementByXPath(transactionsResult_Xpath).Attribute("textContent")
+;~ MsgBox, % driver.FindElementByXPath(transactionsResult_Xpath).Attribute("innerText")
+;~ MsgBox, % driver.FindElementByXPath(transactionsResult_Xpath).Attribute("innerTEXT")
+		
+		
+		; 만약 결제가 안됐으면 메세지 띄우기
+		Result := driver.FindElementByXPath(transactionsResult_Xpath).Attribute("innerText")
+;MsgBox, 262144, Title, Result : %Result%
+		if Result contains Failed
+		{
+			SoundPlay, %A_WinDir%\Media\Ring02.wav
+			MsgBox, 262144, Title, IT'S A PENDING ORDER`nCLICK OK TO CONTINUE
+			;~ break
+		}
+		; 결제 잘 처리됐으면 제대로 처리됐다는 효과음 플레이하기
+		else
+			SoundPlay, %A_WinDir%\Media\Ring06.wav
+		
+		
+		; N41 동작시키기 위한 메세지 창들 활성화 시키기 (마우스로 움직이기 귀찮아서)
+		WinActivate, OPTIONS
+		WinActivate, Memo
+		WinActivate, UPS STATUS
+		WinActivate, NOT APPROVED
+		
+
+
+;MsgBox, 262144, Title, 잘 처리됐남?
 	
 		
 		return
@@ -2234,6 +2312,14 @@ MsgBox, 잘 처리됐남?
 	
 	return
 	
+	
+	
+	
+!F3::
+	;~ driver.close() ; closing just one tab of the browser
+	driver.quit()
+	
+	return
 	
 		
 

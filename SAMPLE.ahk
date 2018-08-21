@@ -11,6 +11,15 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
 
+aaa = Failed ASDF
+
+if aaa contains Failed
+{
+	MsgBox, pending
+}
+
+MsgBox
+
 
 LASMemo = Comment: ASDF
 

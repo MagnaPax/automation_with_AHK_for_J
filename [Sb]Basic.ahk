@@ -12,7 +12,7 @@ driver.Get("/")
 
 driver:= ComObjCreate("Selenium.CHROMEDriver") ;Chrome driver
 driver.AddArgument("disable-infobars") ;'Chrome이 자동화된 테스트 소프트웨어에 의해 제어되고 있습니다.' 라고 뜨는 경고창 없애기
-driver.AddArgument("--start-maximized" ; 창 최대화 하기
+driver.AddArgument("--start-maximized") ; 창 최대화 하기
 driver.addargument("--start-minimized") ; 창 최소화 하기
 
 
